@@ -59,13 +59,20 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## 🛠 Skills/Tech Stack
 
-NextJS, Rest API, Tailwind CSS
+PostgreSQL (Database), NextJS, Rest API, Tailwind CSS
 
 ## Features
 
-- User can view list of the bikes
-- Admin can manages bike with CRUD operation
+**Owner (Admin)**
+
+- Can view listing of all bikes with search functionality
+- Can able to add, update, delete bike details
+
+**Customer**
+
+- Can view listing of all bikes with search functionality
 
 ## Authors
 
 - [@hirensakhiya](https://github.com/hirensakhiya)
+

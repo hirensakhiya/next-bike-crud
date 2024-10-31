@@ -58,7 +58,7 @@ function Home() {
                                 {bikes?.map((bike, i) => (
                                     <tr key={i} className="bg-white border-b hover:bg-gray-50">
                                         <td className="p-4">
-                                            <img src={bike.image} className="w-16 md:w-32 max-w-full max-h-full" alt="Apple Watch" />
+                                            <img src={bike.image} className="w-16 md:w-32 max-w-full max-h-full" alt="Bike" />
                                         </td>
                                         <td className="px-6 py-4 font-semibold text-gray-900 ">
                                             {bike.description}
