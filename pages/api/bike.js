@@ -6,6 +6,9 @@ import formidable from "formidable";
 import jwt from 'jsonwebtoken';
 import apiResponse from './common/api-response.js';
 import path from 'path';
+import { put } from "@vercel/blob";
+import { readFileSync } from 'fs';
+
 export const config = {
     api: {
         bodyParser: false, // Disable the default body parsing
@@ -44,7 +47,7 @@ export default async function handler(req, res) {
         if (req.method === 'POST') {           
             try {
                 const formData = formidable({
-                    uploadDir: path.join(process.cwd(), 'public/images/'),
+                    uploadDir: '/tmp',
                     keepExtensions: true,
                     filename: (name, ext, part) => {
                         return Date.now() + ext;
@@ -56,13 +59,20 @@ export default async function handler(req, res) {
 
                 if(files?.image?.[0]?.mimetype.split("/")[0] !== "image") return apiResponse(res, 400, null, null, "Please upload only image file.");
                 
+                let imageUrl;
+                if(files?.image?.[0]){
+                    const filepath = files?.image?.[0]?.filepath
+                    const { url } = await put(filepath, readFileSync(filepath), { access: 'public' });
+                    imageUrl = url;
+                }
+
                 const body = {
                     description: fields?.description?.[0],
                     rating: fields?.rating?.[0],
                     price: fields?.price?.[0],
                     quantity: fields?.quantity?.[0],
                     type: fields?.type?.[0],
-                    image: "images/" + files?.image?.[0]?.newFilename
+                    image: imageUrl
                 }
 
                 const nullKeys = Object.entries(body).filter(([key, value]) => value === null || value === undefined).map(([key]) => key);  //to check null values in body data
@@ -85,7 +95,7 @@ export default async function handler(req, res) {
         if (req.method === 'PUT') {
             try {
                 const formData = formidable({
-                    uploadDir: path.join(process.cwd(), 'public/images/'),
+                    uploadDir: '/tmp',
                     keepExtensions: true,
                     filename: (name, ext, part) => {
                         return Date.now() + ext;
@@ -98,6 +108,13 @@ export default async function handler(req, res) {
                 let bikeData = getBikeById.rows[0];
                 if (bikeData.length < 1) return apiResponse(res, 204, null, null, "No record found!");
 
+                let imageUrl;
+                if(files?.image?.[0]){
+                    const filepath = files?.image?.[0]?.filepath
+                    const { url } = await put(filepath, readFileSync(filepath), { access: 'public' });
+                    imageUrl = url;
+                }
+
                 const body = {
                     id: fields?.id?.[0],
                     description: fields?.description?.[0] || bikeData.description,
@@ -105,7 +122,7 @@ export default async function handler(req, res) {
                     price: fields?.price?.[0] || bikeData.price,
                     quantity: fields?.quantity?.[0] || bikeData.quantity,
                     type: fields?.type?.[0] || bikeData.type,
-                    image: files?.image?.[0]?.newFilename + "." + files?.image?.[0]?.mimetype?.split("/")[1] || bikeData.image,
+                    image: imageUrl || bikeData.image,
                 }
 
                 if (body.rating < 0 || body.rating > 5) return apiResponse(res, 400, null, null, "Rating should be between 1 to 5.");
