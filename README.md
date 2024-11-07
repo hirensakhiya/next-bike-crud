@@ -102,7 +102,7 @@ or
   pnpm start
 ```
 
-## Project Links
+## Project Routes
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 Open [http://localhost:3000/admin](http://localhost:3000/admin) with your browser to see the admin panel.
@@ -110,6 +110,16 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin) with your browse
 
 [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/bike](http://localhost:3000/api/bike). This endpoint can be edited in `pages/api/bike.js`.
 
+
+## Screenshots and Links
+
+[Visitor Home Page](https://next-bike-crud.vercel.app/)
+
+![VisitorHomePage](public/screenshots/bike_visitor_home.png?raw=true "Success Output")
+
+[Admin Home Page](https://next-bike-crud.vercel.app/admin)
+
+![AdminHomePage](public/screenshots/bike_admin_home.png?raw=true "Success Output")
 
 ## 🛠 Skills/Tech Stack
 
