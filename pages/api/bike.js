@@ -1,13 +1,12 @@
 // pages/api/bike.js
 
-import pool from '@/lib/db-config';
 import { v4 as uuidv4 } from 'uuid';
 import formidable from "formidable";
 import jwt from 'jsonwebtoken';
 import apiResponse from './common/api-response.js';
-import path from 'path';
 import { put } from "@vercel/blob";
 import { readFileSync } from 'fs';
+import Bike from '@/models/bikeModel.js';
 
 export const config = {
     api: {
@@ -16,8 +15,6 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-    const client = await pool.connect();
-
     try {
         res.setHeader('Access-Control-Allow-Origin', '*');
         if (req.method === 'GET') {
@@ -25,12 +22,16 @@ export default async function handler(req, res) {
                 const { id } = req.query;
                 let response;
                 if (id) {
-                    response = await client.query('SELECT * FROM tblbikes WHERE id = $1', [id]);
+                    response = await Bike.findOne({
+                        where: {
+                            id
+                        }
+                    });
                 } else {
-                    response = await client.query('SELECT * FROM tblbikes');
+                    response = await Bike.findAll();
                 }
-                if (response.rows.length < 1) return apiResponse(res, 204, null, null, "No record found!");
-                return apiResponse(res, 200, "Bike data successfully fetched.", id ? response.rows[0] : response.rows);
+                if (response.length < 1) return apiResponse(res, 204, null, null, "No record found!");
+                return apiResponse(res, 200, "Bike data successfully fetched.", id ? response[0] : response);
             } catch (error) {
                 console.error(error);
                 return apiResponse(res, 500, "Something went wrong!", null, error);
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
             if (err) return apiResponse(res, 401, err.message, null, err.name);
         });
 
-        if (req.method === 'POST') {           
+        if (req.method === 'POST') {
             try {
                 const formData = formidable({
                     uploadDir: '/tmp',
@@ -57,10 +58,10 @@ export default async function handler(req, res) {
                 let files;
                 [fields, files] = await formData.parse(req);
 
-                if(files?.image?.[0]?.mimetype.split("/")[0] !== "image") return apiResponse(res, 400, null, null, "Please upload only image file.");
-                
+                if (files?.image?.[0]?.mimetype.split("/")[0] !== "image") return apiResponse(res, 400, null, null, "Please upload only image file.");
+
                 let imageUrl;
-                if(files?.image?.[0]){
+                if (files?.image?.[0]) {
                     const filepath = files?.image?.[0]?.filepath
                     const { url } = await put(filepath, readFileSync(filepath), { access: 'public' });
                     imageUrl = url;
@@ -82,10 +83,10 @@ export default async function handler(req, res) {
 
                 if (body.price < 1) return apiResponse(res, 400, null, null, "Price cannot less than 0.");
 
-                const response = await client.query('INSERT INTO tblbikes(id, description, rating, price, quantity, type, image) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *', [uuidv4(), body.description, body.rating, body.price, body.quantity, body.type, body.image]);
-                if (response.rows.length < 1) return apiResponse(res, 204, null, null, "Data not saved!");
+                const response = await Bike.create({ id: uuidv4(), ...body });
+                if (!response.dataValues) return apiResponse(res, 204, null, null, "Data not saved!");
 
-                return apiResponse(res, 201, "Bike added successfully.", response.rows[0]);
+                return apiResponse(res, 201, "Bike added successfully.", response.dataValues);
             } catch (error) {
                 console.error(error);
                 return apiResponse(res, 500, "Something went wrong!", null, error);
@@ -104,19 +105,24 @@ export default async function handler(req, res) {
                 let fields;
                 let files;
                 [fields, files] = await formData.parse(req);
-                const getBikeById = await client.query('SELECT * FROM tblbikes WHERE id = $1', [fields?.id?.[0]]);
-                let bikeData = getBikeById.rows[0];
-                if (bikeData.length < 1) return apiResponse(res, 204, null, null, "No record found!");
+
+                const getBikeById = await Bike.findOne({
+                    where: {
+                        id: fields?.id?.[0]
+                    }
+                });
+
+                let bikeData = getBikeById.dataValues;
+                if (!bikeData) return apiResponse(res, 204, null, null, "No record found!");
 
                 let imageUrl;
-                if(files?.image?.[0]){
+                if (files?.image?.[0]) {
                     const filepath = files?.image?.[0]?.filepath
                     const { url } = await put(filepath, readFileSync(filepath), { access: 'public' });
                     imageUrl = url;
                 }
 
                 const body = {
-                    id: fields?.id?.[0],
                     description: fields?.description?.[0] || bikeData.description,
                     rating: fields?.rating?.[0] || bikeData.rating,
                     price: fields?.price?.[0] || bikeData.price,
@@ -127,8 +133,12 @@ export default async function handler(req, res) {
 
                 if (body.rating < 0 || body.rating > 5) return apiResponse(res, 400, null, null, "Rating should be between 1 to 5.");
 
-                const response = await client.query('UPDATE tblbikes SET description = $1, rating = $2, price = $3, quantity = $4, type = $5  WHERE id = $6 RETURNING *', [body.description, body.rating, body.price, body.quantity, body.type, body.id]);
-                return apiResponse(res, 200, "Bike data successfully updated.", response.rows[0]);
+                await Bike.update(body, {
+                    where: {
+                        id: fields?.id?.[0]
+                    }
+                });
+                return apiResponse(res, 200, "Bike data successfully updated.", { id: fields?.id?.[0], ...body });
             } catch (error) {
                 console.error(error);
                 return apiResponse(res, 500, "Something went wrong!", null, error);
@@ -138,8 +148,12 @@ export default async function handler(req, res) {
         if (req.method === 'DELETE') {
             try {
                 const { id } = req.query;
-                const response = await client.query('DELETE FROM tblbikes WHERE id = $1', [id]);
-                if (response.rowCount < 1) return apiResponse(res, 204, null, null, "Bike data not deleted.");
+
+                await Bike.destroy({
+                    where: {
+                        id
+                    }
+                });
 
                 return apiResponse(res, 200, "Bike data successfully deleted.");
             } catch (error) {
@@ -154,7 +168,5 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error(error);
         return apiResponse(res, 500, "Internal Server Error.", null, error);
-    } finally {
-        client.release();
     }
 }

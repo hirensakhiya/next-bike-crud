@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL container
+  postgres:
+    image: postgres:latest
+    container_name: my_postgres_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: bike
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "myuser"]
+      interval: 30s
+      retries: 5
+      start_period: 30s
+    networks:
+      - my_network
+
+
+  # # Next.js application container
+  nextjs:
+    build: .
+    container_name: my_nextjs_app
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"  # Expose Next.js app on port 3000
+    environment:
+      DB_USER: myuser
+      DB_HOST: postgres
+      DB_DATABASE: bike
+      DB_PASSWORD: mypassword
+      DB_PORT: 5432
+      JWT_SECRET_TOKEN_KEY: your_jwt_secret_key
+      JWT_SECRET_TOKEN_EXPIRE_TIME: 1h
+    volumes:
+      - .:/app  
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - my_network
+    command: ["pnpm", "dev"]
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  my_network:
+    driver: bridge
