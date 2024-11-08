@@ -28,6 +28,33 @@ or
   pnpm install
 ```
 
+## Create Vercel Project
+
+1. Create Project on Vercel
+
+2. Create Blob read and write token
+    - Go to storage tab
+    - Select **Connect Database** button
+      ![CreateDatabase](public/screenshots/create_database.png?raw=true "Success Output")
+    - Select **Blob** and **Continue**
+      ![BlobReadWriteToken](public/screenshots/blobl_read_write_token.png?raw=true "Success Output")
+
+3. Run below command to install vercel
+    ```bash 
+      npm install -g vercel
+    ```
+4. Run below command to integrate vercel blob
+    ```bash 
+      vercel link
+    ```
+    ```bash 
+      vercel env pull .env.prod
+    ```
+5. Copy ```BLOB_READ_WRITE_TOKEN``` from **.env.prod** to **.env** and **docker-compose.yml** file
+
+6. Delete **.env.prod** file
+
+
 ## Configure Docker
 
 Run the docker with build

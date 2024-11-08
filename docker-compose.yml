@@ -38,6 +38,7 @@ services:
       DB_PORT: 5432
       JWT_SECRET_TOKEN_KEY: your_jwt_secret_key
       JWT_SECRET_TOKEN_EXPIRE_TIME: 1h
+      BLOB_READ_WRITE_TOKEN: your_vercel_blob_token
     volumes:
       - .:/app  
       - /app/node_modules
