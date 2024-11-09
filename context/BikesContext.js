@@ -41,7 +41,9 @@ export const BikesProvider = ({ children }) => {
         email: email
       })
       axios.defaults.headers["authorization"] = localToken
-      router.push("/admin")
+      if (pathname.includes("login")) {
+        router.push("/admin")
+      }
     } else if (pathname.includes("admin") && !pathname.includes("login")) {
       router.push("/admin/login")
     }
